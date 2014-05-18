@@ -1,0 +1,4 @@
+*.o
+*.swp
+test_lz4_filter
+lz4fcli
