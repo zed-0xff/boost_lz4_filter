@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
+// https://docs.google.com/document/d/1cl8N1bmkTdIpPLtnlzbBSFAdUeyNo5fwfHbHU7VRNWY/edit
 // the only macros from <lz4.h> that is necessary in this header
 #ifndef LZ4_COMPRESSBOUND
 #define LZ4_COMPRESSBOUND(isize)  ((isize) + ((isize)/255) + 16)
@@ -25,7 +26,6 @@ const uint32_t legacy_magic = 0x184C2102;
 const unsigned int legacy_blocksize  = 8*1024*1024; // 8 MB
 
 // no LZ4S format for now, maybe in future..
-#if 0
 const uint32_t lz4s_magic   = 0x184D2204;
 
 #pragma pack(push,1)
@@ -48,7 +48,6 @@ struct lz4s_file_header
         uint8_t checkBits;  // = (xxh32(descriptor,2) >> 8) & 0xff
     };
 #pragma pack(pop)
-#endif
 
 } // namespace lz4
 
@@ -65,13 +64,25 @@ class BOOST_IOSTREAMS_DECL lz4_base
         bool m_was_header;
         bool m_fail;
         uint32_t m_bytes_needed;
+        lz4::lz4s_file_header m_lz4s_header;
+        bool m_lz4s;
         std::vector <char> m_in_buf, m_out_buf;
+        bool m_waitblockstart;
+        uint32_t m_block_size;
+        bool m_block_uncompressed;
+        uint32_t m_block_uncompressed_max = 0;
 
         bool decompress_int_buf(const char*&, const char*, char*&, char*, bool);
         bool decompress_ext_buf(const char*&, const char*, char*&, char*, bool);
-        int  lz4_decompress(const char*, char*, int);
+        int  lz4_decompress(const char*, char*, int, int x = lz4::legacy_blocksize);
         void _write_decompressed_buf(char*&dst_begin, char*dst_end);
 
+        bool decompress_filter_input_legacy(const char*& src_begin, const char* src_end,
+                                 char*& dst_begin, char* dst_end);
+        bool decompress_filter_input_lz4s(const char*& src_begin, const char* src_end,
+                                 char*& dst_begin, char* dst_end);
+        bool decompress_filter_output(char*& dst_begin, char* dst_end);
+        bool decompress_filter_header(const char*& src_begin, const char* src_end, bool flush);
     protected:
         lz4_base();
         ~lz4_base();
