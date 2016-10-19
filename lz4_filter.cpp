@@ -315,12 +315,12 @@ bool lz4_base::decompress_filter_input_lz4s(const char*& src_begin, const char* 
         m_block_size = block_size & 0x7FFFFFFF;
         if(m_block_size == 0)
         {
-            std::cerr << COLOR_RED << "LZ4S EOF" << std::endl;
-            if(m_lz4s_header.streamChecksumFlag)
+            if(m_lz4s_header.streamChecksumFlag && src_end-src_begin >= 4)
             {
-                std::cerr << COLOR_RED << "streamChecksumFlag NOT IMPLEMENTED" << std::endl;
+                src_begin += 4;
             }
-            return false;
+            m_bytes_needed = 0;
+            return true;
         }
         else if(m_block_size > m_block_uncompressed_max)
         {
@@ -464,8 +464,7 @@ bool lz4_base::decompress_filter(const char*& src_begin, const char* src_end,
   
   if (flush) 
   {
-    std::cerr << COLOR_BLUE << "Flush" << std::endl;
-    if (!m_in_buf.empty()) 
+    if (!m_in_buf.empty() && src_end-src_begin > 0) 
     {
         FAIL("lz4: unexpected EOF");
     }
